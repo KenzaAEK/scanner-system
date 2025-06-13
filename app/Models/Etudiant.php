@@ -2,142 +2,62 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Etudiant extends Model
 {
     use HasFactory;
 
-    protected $table = 'etudiant';
+    protected $table = 'etudiants';
     protected $primaryKey = 'code_apoge';
     public $incrementing = false;
     protected $keyType = 'string';
-
+    
     protected $fillable = [
         'code_apoge',
         'nom',
         'prenom',
-        'id_niveau',
         'id_classe',
         'email',
-        'telephone'
+        'date_naissance',
+        'statut',
     ];
 
-    /**
-     * Relation avec le niveau
-     */
-    public function niveau()
-    {
-        return $this->belongsTo(Niveau::class, 'id_niveau');
-    }
+    protected $casts = [
+        'date_naissance' => 'date',
+    ];
 
-    /**
-     * Relation avec la classe
-     */
+    // Relations
     public function classe()
     {
-        return $this->belongsTo(Classe::class, 'id_classe');
+        return $this->belongsTo(Classe::class, 'id_classe', 'id_classe');
     }
 
-    /**
-     * Relation avec les présences
-     */
+    public function niveau()
+    {
+        return $this->hasOneThrough(Niveau::class, Classe::class, 'id_classe', 'id_niveau', 'id_classe', 'id_niveau');
+    }
+
     public function presences()
     {
-        return $this->hasMany(Presence::class, 'code_apoge');
+        return $this->hasMany(Presence::class, 'code_apoge', 'code_apoge');
     }
 
-    /**
-     * Scope pour rechercher un étudiant par nom ou prénom
-     */
-    public function scopeSearchByName($query, $search)
-    {
-        return $query->where('nom', 'like', '%' . $search . '%')
-                    ->orWhere('prenom', 'like', '%' . $search . '%')
-                    ->orWhere('code_apoge', 'like', '%' . $search . '%');
-    }
-
-    /**
-     * Scope pour filtrer par niveau
-     */
-    public function scopeByNiveau($query, $niveauId)
-    {
-        return $query->where('id_niveau', $niveauId);
-    }
-
-    /**
-     * Scope pour filtrer par classe
-     */
-    public function scopeByClasse($query, $classeId)
-    {
-        return $query->where('id_classe', $classeId);
-    }
-
-    /**
-     * Accessor pour le nom complet
-     */
+    // Accessors
     public function getNomCompletAttribute()
     {
-        return $this->prenom . ' ' . $this->nom;
+        return $this->nom . ' ' . $this->prenom;
     }
 
-    /**
-     * Accessor pour les initiales
-     */
-    public function getInitialesAttribute()
+    // Scopes
+    public function scopeActifs($query)
     {
-        return strtoupper(substr($this->prenom, 0, 1) . substr($this->nom, 0, 1));
+        return $query->where('statut', 'Actif');
     }
 
-    /**
-     * Méthode pour calculer le taux de présence d'un étudiant
-     */
-    public function getTauxPresence($moduleId = null, $dateDebut = null, $dateFin = null)
+    public function scopeDeClasse($query, $classeId)
     {
-        $query = $this->presences();
-
-        if ($moduleId) {
-            $query->where('id_module', $moduleId);
-        }
-
-        if ($dateDebut) {
-            $query->where('date', '>=', $dateDebut);
-        }
-
-        if ($dateFin) {
-            $query->where('date', '<=', $dateFin);
-        }
-
-        $totalSeances = $query->count();
-        $totalPresences = $query->sum('nbr_present');
-
-        return $totalSeances > 0 ? round(($totalPresences / $totalSeances) * 100, 2) : 0;
-    }
-
-    /**
-     * Méthode pour obtenir les présences par module
-     */
-    public function getPresencesByModule()
-    {
-        return $this->presences()
-            ->selectRaw('id_module, COUNT(*) as total_seances, SUM(nbr_present) as total_presents')
-            ->groupBy('id_module')
-            ->with('module')
-            ->get();
-    }
-
-    /**
-     * Méthode pour vérifier si l'étudiant était présent à une date donnée
-     */
-    public function estPresentLe($date, $moduleId = null)
-    {
-        $query = $this->presences()->where('date', $date);
-        
-        if ($moduleId) {
-            $query->where('id_module', $moduleId);
-        }
-
-        return $query->where('nbr_present', '>', 0)->exists();
+        return $query->where('id_classe', $classeId);
     }
 }

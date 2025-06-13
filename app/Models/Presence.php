@@ -2,39 +2,64 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Presence extends Model
 {
     use HasFactory;
-    
-    protected $table = 'presence';
+
+    protected $primaryKey = 'id_presence';
     
     protected $fillable = [
         'code_apoge',
-        'date',
-        'id_module',
-        'id_niveau',
-        'nbr_present'
+        'id_seance',
+        'est_present',
+        'est_retard',
+        'commentaire',
+        'heure_pointage',
+        'methode_pointage',
     ];
-    
+
     protected $casts = [
-        'date' => 'date',
+        'est_present' => 'boolean',
+        'est_retard' => 'boolean',
+        'heure_pointage' => 'datetime',
     ];
-    
+
+    // Relations
     public function etudiant()
     {
-        return $this->belongsTo(Etudiant::class, 'code_apoge');
+        return $this->belongsTo(Etudiant::class, 'code_apoge', 'code_apoge');
     }
-    
-    public function module()
+
+    public function seance()
     {
-        return $this->belongsTo(Module::class, 'id_module');
+        return $this->belongsTo(Seance::class, 'id_seance', 'id_seance');
     }
-    
-    public function niveau()
+
+    // Accessors
+    public function getStatutAttribute()
     {
-        return $this->belongsTo(Niveau::class, 'id_niveau');
+        if ($this->est_present) {
+            return $this->est_retard ? 'Présent (retard)' : 'Présent';
+        }
+        return 'Absent';
+    }
+
+    // Scopes
+    public function scopePresents($query)
+    {
+        return $query->where('est_present', true);
+    }
+
+    public function scopeAbsents($query)
+    {
+        return $query->where('est_present', false);
+    }
+
+    public function scopeEnRetard($query)
+    {
+        return $query->where('est_retard', true);
     }
 }

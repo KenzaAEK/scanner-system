@@ -2,64 +2,34 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Presence extends Model
 {
-    use HasFactory;
+    protected $table = 'presence';
+    protected $primaryKey = 'presence_id';
+    public $timestamps = false;
 
-    protected $primaryKey = 'id_presence';
-    
     protected $fillable = [
         'code_apoge',
-        'id_seance',
-        'est_present',
-        'est_retard',
-        'commentaire',
-        'heure_pointage',
-        'methode_pointage',
+        'date',
+        'module_id',
+        'classe_id',
+        'nbr_present'
     ];
 
-    protected $casts = [
-        'est_present' => 'boolean',
-        'est_retard' => 'boolean',
-        'heure_pointage' => 'datetime',
-    ];
-
-    // Relations
     public function etudiant()
     {
         return $this->belongsTo(Etudiant::class, 'code_apoge', 'code_apoge');
     }
 
-    public function seance()
+    public function module()
     {
-        return $this->belongsTo(Seance::class, 'id_seance', 'id_seance');
+        return $this->belongsTo(Module::class, 'module_id');
     }
 
-    // Accessors
-    public function getStatutAttribute()
+    public function classe()
     {
-        if ($this->est_present) {
-            return $this->est_retard ? 'Présent (retard)' : 'Présent';
-        }
-        return 'Absent';
-    }
-
-    // Scopes
-    public function scopePresents($query)
-    {
-        return $query->where('est_present', true);
-    }
-
-    public function scopeAbsents($query)
-    {
-        return $query->where('est_present', false);
-    }
-
-    public function scopeEnRetard($query)
-    {
-        return $query->where('est_retard', true);
+        return $this->belongsTo(Classe::class, 'classe_id');
     }
 }

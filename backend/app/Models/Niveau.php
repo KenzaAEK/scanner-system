@@ -2,36 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Niveau extends Model
 {
-    use HasFactory;
+    protected $table = 'niveau';
+    protected $primaryKey = 'niveau_id';
+    public $timestamps = false;
 
-    protected $table = 'niveaux';
-    protected $primaryKey = 'id_niveau';
-    
-    protected $fillable = [
-        'nom_niveau',
-        'annee_scolaire',
-    ];
-
-    // Relations
-    public function classes()
-    {
-        return $this->hasMany(Classe::class, 'id_niveau', 'id_niveau');
-    }
-
-    public function modules()
-    {
-        return $this->belongsToMany(Module::class, 'niveau_module', 'id_niveau', 'id_module')
-                    ->withPivot('coefficient', 'semestre')
-                    ->withTimestamps();
-    }
+    protected $fillable = ['nom_niveau'];
 
     public function etudiants()
     {
-        return $this->hasManyThrough(Etudiant::class, Classe::class, 'id_niveau', 'id_classe', 'id_niveau', 'id_classe');
+        return $this->hasMany(Etudiant::class, 'niveau_id');
     }
 }

@@ -19,8 +19,7 @@ class BinomesController extends Controller
         $process = new Process([
             'python',
             base_path('scripts/generate_absence_list.py'),
-            '--binomes',
-            $request->input('filiere', 'GINF2'),
+            '--binomes', $request->input('filiere', 'GINF2'),
             $request->input('format', 'excel'),
         ]);
 

@@ -123,9 +123,13 @@ if __name__ == "__main__":
     import argparse
 
     p = argparse.ArgumentParser("Générateur de listes d'absence")
-    p.add_argument("filiere",       nargs="?", default="GINF2")
-    p.add_argument("num_seances",   nargs="?", type=int, default=6)
-    p.add_argument("output_format", nargs="?", choices=["excel", "pdf"], default="excel")
+    p.add_argument("--filiere", default="GINF2")
+    p.add_argument("--num_seances", type=int, default=6)
+    p.add_argument("--format", default="excel")
     args = p.parse_args()
 
-    print(generate_absence_list(args.filiere, args.num_seances, args.output_format))
+    print(generate_absence_list(
+        filiere=args.filiere,
+        num_seances=args.num_seances,
+        output_format=args.format
+        ))

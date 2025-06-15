@@ -270,12 +270,7 @@ const canGenerate = computed(() => {
 })
 
 const getGroupSize = computed(() => {
-  switch (groupType.value) {
-    case 'binomes': return 2
-    case 'trinomes': return 3
-    case 'custom': return customGroupSize.value
-    default: return 2
-  }
+  return customGroupSize.value
 })
 
 const currentStudents = computed(() => {

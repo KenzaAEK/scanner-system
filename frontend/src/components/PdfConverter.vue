@@ -80,6 +80,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { CloudArrowUpIcon, PhotoIcon, XMarkIcon, ArrowPathIcon } from '@heroicons/vue/24/outline'
+const scanId = ref<number | null>(null)
+const pdfStatus = ref<'pending' | 'ready' | 'failed' | null>(null)
+const pollInterval = ref<number | null>(null)
 
 const selectedFiles = ref<File[]>([])
 const isDragOver = ref(false)
@@ -114,18 +117,60 @@ const formatFileSize = (bytes: number) => {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
-
 const convertToPdf = async () => {
+  if (selectedFiles.value.length === 0) return
   isConverting.value = true
-  
-  // Simulation de la conversion
-  setTimeout(() => {
-    isConverting.value = false
-    // Ici, on appellerait l'API de conversion
-    console.log('Conversion PDF terminée', { 
-      files: selectedFiles.value.map(f => f.name),
-      metadata: includeMetadata.value 
+
+  try {
+    const formData = new FormData()
+    formData.append('image', selectedFiles.value[0]) // tu peux gérer plusieurs plus tard
+    formData.append('quality', 'Rapide')
+    formData.append('add_background', 'false')
+
+    const response = await fetch('http://127.0.0.1:8000/api/pdf-scan', {
+      method: 'POST',
+      body: formData
     })
+
+    if (!response.ok) throw new Error('Erreur de scan OCR')
+
+    const data = await response.json()
+    scanId.value = data.scan_id
+    pdfStatus.value = 'pending'
+
+    pollPdfStatus()
+  } catch (err) {
+    console.error(err)
+    isConverting.value = false
+  }
+}
+
+const pollPdfStatus = () => {
+  if (!scanId.value) return
+
+  pollInterval.value = window.setInterval(async () => {
+    const res = await fetch(`http://127.0.0.1:8000/api/pdf-scan/${scanId.value}`)
+    const data = await res.json()
+
+    if (data.status === 'ready') {
+      pdfStatus.value = 'ready'
+      clearInterval(pollInterval.value!)
+      isConverting.value = false
+      downloadPdf(scanId.value!)
+    } else if (data.status === 'failed') {
+      pdfStatus.value = 'failed'
+      clearInterval(pollInterval.value!)
+      isConverting.value = false
+      alert('La conversion a échoué.')
+    }
   }, 2000)
 }
+const downloadPdf = (id: number) => {
+  const url = `http://127.0.0.1:8000/api/pdf-scan/${id}/download`
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `converted.pdf`
+  a.click()
+}
+
 </script>
